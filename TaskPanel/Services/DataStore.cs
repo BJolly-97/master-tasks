@@ -32,7 +32,6 @@ public static class DataStore
                         foreach (var task in list.Tasks)
                         {
                             task.Owner = list;
-                            task.IsExpanded = task.SubTasks.Count > 0;
                             foreach (var subTask in task.SubTasks)
                                 subTask.Owner = task;
                         }

@@ -71,8 +71,7 @@ public class TaskItem : INotifyPropertyChanged
     /// <summary>Smaller checklist items nested under this task. Not urgency-tracked or dated themselves.</summary>
     public ObservableCollection<SubTaskItem> SubTasks { get; set; } = new();
 
-    /// <summary>Whether the sub-tasks panel is currently shown. Transient UI state, not persisted.</summary>
-    [JsonIgnore]
+    /// <summary>Whether the sub-tasks panel is currently shown — remembered across restarts.</summary>
     public bool IsExpanded
     {
         get => _isExpanded;
