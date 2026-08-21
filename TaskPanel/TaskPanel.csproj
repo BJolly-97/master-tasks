@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AssemblyName>TaskPanel</AssemblyName>
+    <RootNamespace>TaskPanel</RootNamespace>
+    <StartupObject>TaskPanel.App</StartupObject>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- UseWindowsForms implicitly adds global usings for System.Windows.Forms and System.Drawing,
+       which collide with WPF's System.Windows.* types (Application, TextBox, KeyEventArgs, ...).
+       We only need WinForms for the tray icon, so reference those two namespaces explicitly instead. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms"/>
+    <Using Remove="System.Drawing"/>
+  </ItemGroup>
+
+</Project>
