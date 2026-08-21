@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -9,6 +10,13 @@ public class TaskItem : INotifyPropertyChanged
     private string _text = string.Empty;
     private bool _isDone;
     private DateTime? _dueDate;
+    private bool _isExpanded;
+
+    public TaskItem()
+    {
+        // Keep the collapse/expand toggle's "▸ N" label current as sub-tasks come and go.
+        SubTasks.CollectionChanged += (_, _) => OnPropertyChanged(nameof(SubTaskToggleLabel));
+    }
 
     public string Text
     {
@@ -59,6 +67,22 @@ public class TaskItem : INotifyPropertyChanged
     // resets each session, and explicitly reset whenever DueDate changes.
     [JsonIgnore]
     public bool HasNotifiedUrgent { get; set; }
+
+    /// <summary>Smaller checklist items nested under this task. Not urgency-tracked or dated themselves.</summary>
+    public ObservableCollection<SubTaskItem> SubTasks { get; set; } = new();
+
+    /// <summary>Whether the sub-tasks panel is currently shown. Transient UI state, not persisted.</summary>
+    [JsonIgnore]
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set { _isExpanded = value; OnPropertyChanged(); OnPropertyChanged(nameof(SubTaskToggleLabel)); }
+    }
+
+    [JsonIgnore]
+    public string SubTaskToggleLabel => SubTasks.Count == 0
+        ? "+ sub-task"
+        : $"{(IsExpanded ? "▾" : "▸")} {SubTasks.Count} sub-task{(SubTasks.Count == 1 ? "" : "s")}";
 
     /// <summary>Re-raises the date-derived bindings so the UI re-groups/re-labels as time passes.</summary>
     public void RefreshUrgency()

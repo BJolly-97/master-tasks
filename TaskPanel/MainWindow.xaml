@@ -22,18 +22,23 @@
     </shell:WindowChrome.WindowChrome>
 
     <Window.Resources>
+      <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="Styles/Bevel.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
 
         <Style x:Key="IconButtonStyle" TargetType="Button">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="4"
+                                BorderBrush="{StaticResource BevelBorderBrush}" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#2A43978D"/>
+                                <Setter TargetName="Bg" Property="Background" Value="#2A43978D"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -47,12 +52,13 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="4"
+                                BorderBrush="{StaticResource BevelBorderBrush}" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#40D46C4E"/>
+                                <Setter TargetName="Bg" Property="Background" Value="#40D46C4E"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -231,32 +237,120 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Task row: checking it off archives it immediately -->
-        <DataTemplate DataType="{x:Type models:TaskItem}">
-            <Grid Margin="2,3">
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Collapse/expand toggle showing "+ sub-task" or "▸/▾ N sub-tasks" -->
+        <Style x:Key="SubTaskToggleStyle" TargetType="Button">
+            <Setter Property="Content" Value="{Binding SubTaskToggleLabel}"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="Margin" Value="4,0,0,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#80FFFFFF"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="ToolTip" Value="Sub-tasks"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" CornerRadius="8" Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#2A43978D"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Sub-task row: a lightweight checklist item nested under a task. Ticking it
+             off archives just that piece and leaves the parent task alone. -->
+        <DataTemplate DataType="{x:Type models:SubTaskItem}">
+            <Grid Margin="0,2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="2,0,8,0"
-                          IsChecked="{Binding IsDone, Mode=TwoWay}"
-                          Checked="TaskDone_Checked"
+                <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="0,0,7,0"
+                          Checked="SubTaskDone_Checked"
                           Style="{StaticResource RoundedCheckBoxStyle}"/>
-                <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#F0FFFFFF" FontSize="13"
+                <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#D8FFFFFF" FontSize="12"
                            VerticalAlignment="Center" TextWrapping="Wrap"/>
-                <Button Grid.Column="2" Click="DueDate_Click" VerticalAlignment="Center"
-                        Style="{StaticResource DueDatePillStyle}"/>
-                <Button Grid.Column="3" Content="&#x2715;" FontSize="10"
-                        Width="22" Height="22" Padding="0" VerticalAlignment="Center"
-                        Background="Transparent" BorderThickness="0" Foreground="#80FFFFFF"
-                        ToolTip="Remove task" Click="DeleteTask_Click"
+                <Button Grid.Column="2" Content="&#x2715;" FontSize="9"
+                        Width="18" Height="18" Padding="0" VerticalAlignment="Center"
+                        Background="Transparent" BorderThickness="0" Foreground="#70FFFFFF"
+                        ToolTip="Remove sub-task" Click="DeleteSubTask_Click"
                         Style="{StaticResource DangerIconButtonStyle}"/>
             </Grid>
         </DataTemplate>
 
-        <!-- Archived task row -->
+        <!-- Task row: checking it off archives it immediately. May have nested sub-tasks
+             in a collapsible panel below — ticking one of those archives just that piece
+             and leaves this task in place. -->
+        <DataTemplate DataType="{x:Type models:TaskItem}">
+            <Grid Margin="2,3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="2,0,8,0"
+                              IsChecked="{Binding IsDone, Mode=TwoWay}"
+                              Checked="TaskDone_Checked"
+                              Style="{StaticResource RoundedCheckBoxStyle}"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#F0FFFFFF" FontSize="13"
+                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                    <Button Grid.Column="2" Click="DueDate_Click" VerticalAlignment="Center"
+                            Style="{StaticResource DueDatePillStyle}"/>
+                    <Button Grid.Column="3" Click="SubTaskToggle_Click" VerticalAlignment="Center"
+                            Style="{StaticResource SubTaskToggleStyle}"/>
+                    <Button Grid.Column="4" Content="&#x2715;" FontSize="10"
+                            Width="22" Height="22" Padding="0" VerticalAlignment="Center"
+                            Background="Transparent" BorderThickness="0" Foreground="#80FFFFFF"
+                            ToolTip="Remove task" Click="DeleteTask_Click"
+                            Style="{StaticResource DangerIconButtonStyle}"/>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="30,3,4,2"
+                      Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ItemsControl Grid.Row="0" ItemsSource="{Binding SubTasks}"/>
+
+                    <Grid Grid.Row="1" Margin="0,4,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" Background="#14FFFFFF" Foreground="White" CaretBrush="White"
+                                  BorderBrush="#3343978D" BorderThickness="1" Padding="5,3" FontSize="12"
+                                  VerticalContentAlignment="Center" KeyDown="AddSubTask_KeyDown"/>
+                        <Button Grid.Column="1" Content="Add" Margin="5,0,0,0" Padding="8,3" FontSize="11.5"
+                                Background="#5543978D" Foreground="White"
+                                Click="AddSubTask_Click" Style="{StaticResource BeveledActionButtonStyle}"/>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </DataTemplate>
+
+        <!-- Archived task row. If this was a sub-task, a small caption names the
+             overarching task it came from. -->
         <DataTemplate DataType="{x:Type models:ArchivedTask}">
             <Grid Margin="2,3">
                 <Grid.ColumnDefinitions>
@@ -264,8 +358,25 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Text="{Binding Text}" Foreground="#90FFFFFF" FontSize="13"
-                           TextDecorations="Strikethrough" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ParentTaskText}" Foreground="#70FFFFFF" FontSize="10.5"
+                               FontStyle="Italic" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ParentTaskText}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding ParentTaskText}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <TextBlock Text="{Binding Text}" Foreground="#90FFFFFF" FontSize="13"
+                               TextDecorations="Strikethrough" TextWrapping="Wrap"/>
+                </StackPanel>
                 <Button Grid.Column="1" Content="&#x21BA;" FontSize="12"
                         Width="22" Height="22" Padding="0" VerticalAlignment="Center"
                         Background="Transparent" BorderThickness="0" Foreground="#80FFFFFF"
@@ -345,14 +456,8 @@
                         </TextBox.Style>
                     </TextBox>
                     <Button Grid.Column="1" Content="Add" Margin="6,0,0,0" Padding="10,5"
-                            Background="#8043978D" Foreground="White" BorderThickness="0"
-                            Click="AddTask_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
+                            Background="#8043978D" Foreground="White"
+                            Click="AddTask_Click" Style="{StaticResource BeveledActionButtonStyle}"/>
                 </Grid>
             </Grid>
         </DataTemplate>
@@ -409,6 +514,7 @@
                 <PropertyGroupDescription PropertyName="SourceListName"/>
             </CollectionViewSource.GroupDescriptions>
         </CollectionViewSource>
+      </ResourceDictionary>
     </Window.Resources>
 
     <Border CornerRadius="12" BorderBrush="#4443978D" BorderThickness="1" Background="Transparent" ClipToBounds="True">
@@ -469,14 +575,8 @@
 
                     <Button Grid.Row="0" Content="&#x1F5CE; Export to .docx" HorizontalAlignment="Right"
                             Margin="0,0,0,8" Padding="10,5" Background="#8043978D" Foreground="White"
-                            BorderThickness="0" ToolTip="Export what's currently archived as a Word report"
-                            Click="ExportArchive_Click">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="6"/>
-                            </Style>
-                        </Button.Resources>
-                    </Button>
+                            ToolTip="Export what's currently archived as a Word report"
+                            Click="ExportArchive_Click" Style="{StaticResource BeveledActionButtonStyle}"/>
 
                     <Grid Grid.Row="1">
                         <TextBlock Text="Nothing archived yet — tick a task to send it here."

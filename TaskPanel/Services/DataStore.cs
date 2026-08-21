@@ -26,10 +26,16 @@ public static class DataStore
                 var data = JsonSerializer.Deserialize<AppData>(json, Options);
                 if (data is not null)
                 {
-                    // Re-link each task to its owning list (not persisted).
+                    // Re-link each task to its owning list, and each sub-task to its
+                    // owning task (neither back-reference is persisted).
                     foreach (var list in data.Lists)
                         foreach (var task in list.Tasks)
+                        {
                             task.Owner = list;
+                            task.IsExpanded = task.SubTasks.Count > 0;
+                            foreach (var subTask in task.SubTasks)
+                                subTask.Owner = task;
+                        }
                     return data;
                 }
             }

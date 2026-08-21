@@ -262,6 +262,65 @@ public partial class MainWindow : Window
         RefreshUrgencyAndNotify();
     }
 
+    // --- Sub-tasks ------------------------------------------------------------
+
+    private void SubTaskToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: TaskItem item }) return;
+        item.IsExpanded = !item.IsExpanded;
+    }
+
+    private void AddSubTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Parent: Panel panel }) return;
+        var box = panel.Children.OfType<TextBox>().FirstOrDefault();
+        if (box is not null) AddSubTaskFrom(box);
+    }
+
+    private void AddSubTask_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        if (sender is TextBox box) AddSubTaskFrom(box);
+    }
+
+    private void AddSubTaskFrom(TextBox box)
+    {
+        if (box.DataContext is not TaskItem task) return;
+
+        var text = box.Text.Trim();
+        if (string.IsNullOrEmpty(text)) return;
+
+        task.SubTasks.Add(new SubTaskItem { Text = text, Owner = task });
+        box.Clear();
+        box.Focus();
+        SaveNow();
+    }
+
+    private void DeleteSubTask_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { DataContext: SubTaskItem subTask }) return;
+        subTask.Owner?.SubTasks.Remove(subTask);
+        SaveNow();
+    }
+
+    /// <summary>Ticking a sub-task off archives just that piece — the parent task stays put.</summary>
+    private void SubTaskDone_Checked(object sender, RoutedEventArgs e)
+    {
+        if (_data is null) return;
+        if (sender is not FrameworkElement { DataContext: SubTaskItem subTask }) return;
+
+        var parent = subTask.Owner;
+        parent?.SubTasks.Remove(subTask);
+        _data.Archive.Insert(0, new ArchivedTask
+        {
+            Text = subTask.Text,
+            SourceListName = parent?.Owner?.Name ?? "(unknown list)",
+            ParentTaskText = parent?.Text,
+        });
+        UpdateArchiveEmptyHint();
+        SaveNow();
+    }
+
     /// <summary>
     /// Re-evaluates every task's urgency (so the UI re-groups even as time passes,
     /// not just on edits) and fires one tray reminder per task the first time it
@@ -330,8 +389,23 @@ public partial class MainWindow : Window
         if (sender is not FrameworkElement { DataContext: TaskItem item }) return;
 
         var owner = item.Owner;
+        var listName = owner?.Name ?? "(unknown list)";
+
+        // Completing the overarching task also wraps up anything still open beneath
+        // it, rather than silently losing those sub-tasks.
+        foreach (var subTask in item.SubTasks.ToList())
+        {
+            _data.Archive.Insert(0, new ArchivedTask
+            {
+                Text = subTask.Text,
+                SourceListName = listName,
+                ParentTaskText = item.Text,
+            });
+        }
+        item.SubTasks.Clear();
+
         owner?.Tasks.Remove(item);
-        _data.Archive.Insert(0, new ArchivedTask { Text = item.Text, SourceListName = owner?.Name ?? "(unknown list)" });
+        _data.Archive.Insert(0, new ArchivedTask { Text = item.Text, SourceListName = listName });
         UpdateArchiveEmptyHint();
         SaveNow();
     }

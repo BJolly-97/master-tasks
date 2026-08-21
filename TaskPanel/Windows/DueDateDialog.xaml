@@ -12,30 +12,36 @@
         Topmost="True">
 
     <Window.Resources>
+      <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="../Styles/Bevel.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+
         <Style x:Key="QuickPickStyle" TargetType="Button">
             <Setter Property="Margin" Value="0,0,6,6"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Background" Value="#1A43978D"/>
             <Setter Property="Foreground" Value="#EEFFFFFF"/>
             <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="10"
-                                Padding="{TemplateBinding Padding}">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="10"
+                                Padding="{TemplateBinding Padding}"
+                                BorderBrush="{StaticResource BevelBorderBrush}" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="#3343978D"/>
+                                <Setter TargetName="Bg" Property="Background" Value="#3343978D"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+      </ResourceDictionary>
     </Window.Resources>
 
     <Border Background="#EE1E1E28" CornerRadius="10" BorderBrush="#33FFFFFF" BorderThickness="1" Padding="16">
@@ -59,13 +65,13 @@
             </WrapPanel>
 
             <Grid Margin="0,16,0,0">
-                <Button Content="Clear date" Click="Clear_Click" HorizontalAlignment="Left"
-                        Background="Transparent" Foreground="#D46C4E" BorderThickness="0" Padding="4"/>
+                <Button Content="Clear date" Click="Clear_Click" HorizontalAlignment="Left" Padding="4"
+                        Background="#22D46C4E" Foreground="#F9AD6A" Style="{StaticResource BeveledActionButtonStyle}"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Content="Cancel" Click="Cancel_Click" Width="70" Margin="0,0,8,0"
-                            Background="Transparent" Foreground="#BBFFFFFF" BorderThickness="0" Padding="4"/>
-                    <Button Content="Save" Click="Save_Click" Width="70"
-                            Background="#4478C0FF" Foreground="White" BorderThickness="0" Padding="4"/>
+                    <Button Content="Cancel" Click="Cancel_Click" Width="70" Margin="0,0,8,0" Padding="4"
+                            Background="#22FFFFFF" Foreground="#DDFFFFFF" Style="{StaticResource BeveledActionButtonStyle}"/>
+                    <Button Content="Save" Click="Save_Click" Width="70" Padding="4"
+                            Background="#4478C0FF" Foreground="White" Style="{StaticResource BeveledActionButtonStyle}"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
