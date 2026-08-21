@@ -280,7 +280,8 @@
                           Checked="SubTaskDone_Checked"
                           Style="{StaticResource RoundedCheckBoxStyle}"/>
                 <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#D8FFFFFF" FontSize="12"
-                           VerticalAlignment="Center" TextWrapping="Wrap"/>
+                           VerticalAlignment="Center" TextWrapping="Wrap" Cursor="Hand"
+                           ToolTip="Double-click to edit" MouseLeftButtonDown="SubTaskText_Click"/>
                 <Button Grid.Column="2" Content="&#x2715;" FontSize="9"
                         Width="18" Height="18" Padding="0" VerticalAlignment="Center"
                         Background="Transparent" BorderThickness="0" Foreground="#70FFFFFF"
@@ -312,7 +313,8 @@
                               Checked="TaskDone_Checked"
                               Style="{StaticResource RoundedCheckBoxStyle}"/>
                     <TextBlock Grid.Column="1" Text="{Binding Text}" Foreground="#F0FFFFFF" FontSize="13"
-                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                               VerticalAlignment="Center" TextWrapping="Wrap" Cursor="Hand"
+                               ToolTip="Double-click to edit" MouseLeftButtonDown="TaskText_Click"/>
                     <Button Grid.Column="2" Click="DueDate_Click" VerticalAlignment="Center"
                             Style="{StaticResource DueDatePillStyle}"/>
                     <Button Grid.Column="3" Click="SubTaskToggle_Click" VerticalAlignment="Center"

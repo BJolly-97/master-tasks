@@ -303,6 +303,19 @@ public partial class MainWindow : Window
         SaveNow();
     }
 
+    private void SubTaskText_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2) return;
+        if (sender is not FrameworkElement { DataContext: SubTaskItem subTask }) return;
+
+        var dlg = new InputDialog("Edit sub-task:", subTask.Text) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            subTask.Text = dlg.ResultText;
+            SaveNow();
+        }
+    }
+
     /// <summary>Ticking a sub-task off archives just that piece — the parent task stays put.</summary>
     private void SubTaskDone_Checked(object sender, RoutedEventArgs e)
     {
@@ -380,6 +393,19 @@ public partial class MainWindow : Window
         if (sender is not FrameworkElement { DataContext: TaskItem item }) return;
         item.Owner?.Tasks.Remove(item);
         SaveNow();
+    }
+
+    private void TaskText_Click(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2) return;
+        if (sender is not FrameworkElement { DataContext: TaskItem item }) return;
+
+        var dlg = new InputDialog("Edit task:", item.Text) { Owner = this };
+        if (dlg.ShowDialog() == true)
+        {
+            item.Text = dlg.ResultText;
+            SaveNow();
+        }
     }
 
     /// <summary>Ticking a task off archives it immediately, under its list's name.</summary>
