@@ -425,6 +425,25 @@ public partial class MainWindow : Window
             return;
         }
 
+        // If this was a sub-task, put it back under its original parent task rather
+        // than restoring it as a standalone top-level task.
+        if (!string.IsNullOrEmpty(archived.ParentTaskText))
+        {
+            var parent = list.Tasks.FirstOrDefault(t => t.Text == archived.ParentTaskText);
+            if (parent is not null)
+            {
+                parent.SubTasks.Add(new SubTaskItem { Text = archived.Text, Owner = parent });
+                parent.IsExpanded = true;
+                _data.Archive.Remove(archived);
+                UpdateArchiveEmptyHint();
+                SaveNow();
+                return;
+            }
+
+            MessageBox.Show(this, $"The task \"{archived.ParentTaskText}\" no longer exists, so this was restored as its own task instead.",
+                "Master Tasks", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         list.Tasks.Add(new TaskItem { Text = archived.Text, Owner = list });
         _data.Archive.Remove(archived);
         UpdateArchiveEmptyHint();
