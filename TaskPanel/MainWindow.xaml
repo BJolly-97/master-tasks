@@ -538,13 +538,20 @@
                             <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="Bg" Property="Background" Value="#5D43978D"/>
-                                <Setter TargetName="Bg" Property="BorderBrush" Value="#8043978D"/>
-                            </Trigger>
                             <Trigger Property="IsSelected" Value="False">
                                 <Setter TargetName="Bg" Property="Background" Value="Transparent"/>
                                 <Setter TargetName="Bg" Property="BorderBrush" Value="Transparent"/>
+                            </Trigger>
+                            <!-- Muted terracotta pill tint — a list with an urgent task inside gets
+                                 flagged here too, not just on the "Urgent" heading once you're in it.
+                                 Ordered so IsSelected/hover below still take visual priority over it. -->
+                            <DataTrigger Binding="{Binding HasUrgentTask}" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#33D46C4E"/>
+                                <Setter TargetName="Bg" Property="BorderBrush" Value="#55D46C4E"/>
+                            </DataTrigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#5D43978D"/>
+                                <Setter TargetName="Bg" Property="BorderBrush" Value="#8043978D"/>
                             </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
