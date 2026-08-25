@@ -290,6 +290,68 @@
             </Grid>
         </DataTemplate>
 
+        <!-- Inbox: summarized Gmail thread row (real fetch or placeholder) -->
+        <DataTemplate DataType="{x:Type models:EmailThreadSummary}">
+            <Grid Margin="4,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Ellipse Grid.Column="0" Width="8" Height="8" Margin="2,5,10,0" VerticalAlignment="Top">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="Transparent"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsUnread}" Value="True">
+                                    <Setter Property="Fill" Value="#43978D"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <StackPanel Grid.Column="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Sender}" Foreground="#F0FFFFFF"
+                                   FontSize="12.5" FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1" Text="{Binding TimeLabel}" Foreground="#70FFFFFF"
+                                   FontSize="10.5" Margin="8,0,0,0"/>
+                    </Grid>
+                    <Grid Margin="0,2,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Subject}" Foreground="#DDFFFFFF" FontSize="12"
+                                   TextTrimming="CharacterEllipsis"/>
+                        <TextBlock Grid.Column="1" Text="&#x2605;" Foreground="#F9E07F" FontSize="11" Margin="6,0,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFlagged}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                    <TextBlock Text="{Binding Snippet}" Foreground="#80FFFFFF" FontSize="11" Margin="0,2,0,0"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <Button Grid.Column="2" Content="&#x2715;" FontSize="9"
+                        Width="18" Height="18" Padding="0" VerticalAlignment="Top" Margin="6,4,0,0"
+                        Background="Transparent" BorderThickness="0" Foreground="#70FFFFFF"
+                        ToolTip="Not useful — hide this" Click="DismissEmail_Click"
+                        Style="{StaticResource DangerIconButtonStyle}"/>
+            </Grid>
+        </DataTemplate>
+
         <!-- Task row: checking it off archives it immediately. May have nested sub-tasks
              in a collapsible panel below — ticking one of those archives just that piece
              and leaves this task in place. -->
@@ -560,6 +622,8 @@
                     </TabControl>
                     <Button x:Name="ArchiveButton" Content="Archive" ToolTip="Completed tasks"
                             Style="{StaticResource PillButtonStyle}" Click="ShowArchive_Click"/>
+                    <Button x:Name="InboxButton" Content="Inbox" ToolTip="Gmail thread summary (read-only)"
+                            Style="{StaticResource PillButtonStyle}" Click="ShowInbox_Click"/>
                     <Button Content="&#x2795; New" ToolTip="New list" FontSize="11.5"
                             Style="{StaticResource PillButtonStyle}" Click="NewList_Click"/>
                 </StackPanel>
@@ -601,6 +665,33 @@
                             </ListBox.GroupStyle>
                         </ListBox>
                     </Grid>
+                </Grid>
+
+                <!-- Inbox: Gmail thread summary, filtered on-device -->
+                <Grid x:Name="InboxPanel" Visibility="Collapsed" Margin="10,8,10,10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#332B4A57" CornerRadius="6" Padding="8,6" Margin="0,0,8,0">
+                            <TextBlock x:Name="InboxStatusText" Text="Not connected yet." Foreground="#F9AD6A"
+                                       FontSize="11" TextWrapping="Wrap"/>
+                        </Border>
+                        <Button Grid.Column="1" Content="&#x21BB; Refresh" Padding="8,6" FontSize="11"
+                                Background="#5543978D" Foreground="White" VerticalAlignment="Top"
+                                Click="RefreshInbox_Click" Style="{StaticResource BeveledActionButtonStyle}"/>
+                    </Grid>
+
+                    <ListBox Grid.Row="1" x:Name="InboxListBox"
+                              Background="Transparent" BorderThickness="0"
+                              ItemContainerStyle="{StaticResource TransparentListBoxItem}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
                 </Grid>
             </Grid>
         </Grid>

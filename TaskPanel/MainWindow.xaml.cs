@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,10 +15,12 @@ namespace TaskPanel;
 
 public partial class MainWindow : Window
 {
+    private enum PanelView { Lists, Archive, Inbox }
+
     private static readonly Brush ActivePillBrush = new SolidColorBrush(Color.FromArgb(0x55, 0xF9, 0xAD, 0x6A));
 
     private AppData? _data;
-    private bool _showingArchive;
+    private PanelView _currentView = PanelView.Lists;
     private DispatcherTimer? _urgencyTimer;
 
     public MainWindow()
@@ -140,25 +143,91 @@ public partial class MainWindow : Window
 
     private void ListsTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        // Picking a real list tab always switches away from the archive view.
-        if (_showingArchive) ShowListsView();
+        // Picking a real list tab always switches away from the archive/inbox view.
+        if (_currentView != PanelView.Lists) ShowListsView();
     }
 
-    private void ShowArchive_Click(object sender, RoutedEventArgs e)
+    private void ShowArchive_Click(object sender, RoutedEventArgs e) => SetView(PanelView.Archive);
+
+    private bool _inboxLoadedOnce;
+
+    private async void ShowInbox_Click(object sender, RoutedEventArgs e)
     {
-        _showingArchive = true;
-        ListContentPresenter.Visibility = Visibility.Collapsed;
-        ArchivePanel.Visibility = Visibility.Visible;
-        ArchiveButton.Background = ActivePillBrush;
+        SetView(PanelView.Inbox);
+        if (!_inboxLoadedOnce)
+        {
+            _inboxLoadedOnce = true;
+            await LoadInboxAsync();
+        }
     }
 
-    private void ShowListsView()
+    private async void RefreshInbox_Click(object sender, RoutedEventArgs e) => await LoadInboxAsync();
+
+    /// <summary>Hides an email the automatic filtering missed. Persisted by message ID.</summary>
+    private void DismissEmail_Click(object sender, RoutedEventArgs e)
     {
-        _showingArchive = false;
-        ArchivePanel.Visibility = Visibility.Collapsed;
-        ListContentPresenter.Visibility = Visibility.Visible;
-        ArchiveButton.Background = Brushes.Transparent;
+        if (sender is not FrameworkElement { DataContext: EmailThreadSummary thread }) return;
+        if (InboxListBox.ItemsSource is ObservableCollection<EmailThreadSummary> items)
+            items.Remove(thread);
+
+        if (!string.IsNullOrEmpty(thread.MessageId))
+            GmailInboxService.DismissEmail(thread.MessageId);
     }
+
+    private async System.Threading.Tasks.Task LoadInboxAsync()
+    {
+        if (!GmailInboxService.CredentialsFileExists)
+        {
+            var wantPath = System.IO.Path.GetFullPath(GmailInboxService.CredentialsPath);
+            InboxStatusText.Text = $"No Google credentials yet — showing placeholder rows. Save the OAuth JSON to:\n{wantPath}";
+            InboxListBox.ItemsSource = BuildPlaceholderInbox();
+            return;
+        }
+
+        InboxStatusText.Text = "Loading your inbox... (a browser window may open the first time, to sign in)";
+        InboxListBox.ItemsSource = null;
+
+        try
+        {
+            var (kept, total, manuallyDismissed) = await GmailInboxService.FetchAndFilterAsync();
+            InboxListBox.ItemsSource = new ObservableCollection<EmailThreadSummary>(kept);
+            var autoFilteredOut = total - kept.Count - manuallyDismissed;
+            InboxStatusText.Text = kept.Count == 0
+                ? $"Fetched {total} recent emails — none made it through filtering."
+                : $"Showing {kept.Count} of {total} recent emails — {autoFilteredOut} filtered automatically" +
+                  (manuallyDismissed > 0 ? $", {manuallyDismissed} previously dismissed by you." : ".");
+        }
+        catch (Exception ex)
+        {
+            InboxStatusText.Text = $"Couldn't load your inbox: {ex.Message}";
+        }
+    }
+
+    /// <summary>Placeholder rows shown before any Google account is connected.</summary>
+    private static List<EmailThreadSummary> BuildPlaceholderInbox() => new()
+    {
+        new() { Sender = "Research Group", Subject = "Re: Funding proposal — a few questions",
+                Snippet = "Thanks for sending this over. Could you clarify the budget line for...",
+                TimeLabel = "10:42", IsUnread = true, IsFlagged = true },
+        new() { Sender = "Steering Committee", Subject = "Meeting agenda for Thursday",
+                Snippet = "Please review the attached agenda before the meeting and add any...",
+                TimeLabel = "09:15", IsUnread = true },
+        new() { Sender = "Facilities", Subject = "Room booking confirmed",
+                Snippet = "Your booking for Meeting Room 3 on Friday at 2pm is confirmed.",
+                TimeLabel = "Mon", IsUnread = false },
+    };
+
+    private void SetView(PanelView view)
+    {
+        _currentView = view;
+        ListContentPresenter.Visibility = view == PanelView.Lists ? Visibility.Visible : Visibility.Collapsed;
+        ArchivePanel.Visibility = view == PanelView.Archive ? Visibility.Visible : Visibility.Collapsed;
+        InboxPanel.Visibility = view == PanelView.Inbox ? Visibility.Visible : Visibility.Collapsed;
+        ArchiveButton.Background = view == PanelView.Archive ? ActivePillBrush : Brushes.Transparent;
+        InboxButton.Background = view == PanelView.Inbox ? ActivePillBrush : Brushes.Transparent;
+    }
+
+    private void ShowListsView() => SetView(PanelView.Lists);
 
     private void TabHeader_Click(object sender, MouseButtonEventArgs e)
     {
