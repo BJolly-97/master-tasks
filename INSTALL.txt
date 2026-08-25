@@ -1,0 +1,126 @@
+MASTER TASKS - INSTALLATION GUIDE
+==================================
+
+Requirements
+------------
+- Windows 10 or 11
+- .NET 8 SDK (only needed to build the app - see step 2)
+- ~300 MB free disk space if you need to install the SDK
+
+
+1. Get the code
+----------------
+With git installed:
+
+    git clone https://github.com/BJolly-97/master-tasks.git
+    cd master-tasks
+
+Without git: open https://github.com/BJolly-97/master-tasks in a browser,
+click "Code" > "Download ZIP", then extract it.
+
+
+2. Install the .NET 8 SDK (if you don't already have it)
+----------------------------------------------------------
+Check first:
+
+    dotnet --list-sdks
+
+If that fails, or doesn't list an 8.x entry, install it.
+
+  Option A - you have admin rights on this device (simplest):
+
+    winget install Microsoft.DotNet.SDK.8
+
+  or download the installer from:
+
+    https://dotnet.microsoft.com/download/dotnet/8.0
+
+  Option B - no admin rights available (installs to your own user
+  folder, no elevation prompt, no UAC needed):
+
+    Open PowerShell and run:
+
+      Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile "$env:TEMP\dotnet-install.ps1"
+      & "$env:TEMP\dotnet-install.ps1" -Channel 8.0 -InstallDir "$env:USERPROFILE\.dotnet"
+
+    Then, for the current PowerShell session:
+
+      $env:PATH = "$env:USERPROFILE\.dotnet;$env:PATH"
+
+    To make that permanent (so you don't have to repeat it every new
+    terminal session): Settings > System > About > Advanced system
+    settings > Environment Variables > add "%USERPROFILE%\.dotnet" to
+    your user PATH variable.
+
+
+3. Build it
+-----------
+From inside the TaskPanel project folder (master-tasks\TaskPanel):
+
+    dotnet build -c Release
+
+This produces the app at:
+
+    TaskPanel\bin\Release\net8.0-windows\TaskPanel.exe
+
+(A plain `dotnet build` with no -c flag also works and is fine for
+trying it out, but produces a slower Debug build - point any shortcut
+or taskbar pin at the Release build above.)
+
+
+4. Run it
+---------
+Double-click TaskPanel.exe, or from PowerShell:
+
+    .\bin\Release\net8.0-windows\TaskPanel.exe
+
+The app opens as a translucent panel and lives in the system tray from
+then on. Left-click the tray icon at any time to bring it to the front.
+
+
+5. Desktop shortcut + taskbar pin (optional, but recommended)
+-----------------------------------------------------------------
+Desktop shortcut with the app's own icon:
+
+  - Right-click TaskPanel.exe > Send to > Desktop (create shortcut)
+
+  or, via PowerShell (fill in the real path to TaskPanel.exe):
+
+      $ws = New-Object -ComObject WScript.Shell
+      $sc = $ws.CreateShortcut("$env:USERPROFILE\Desktop\Master Tasks.lnk")
+      $sc.TargetPath = "C:\path\to\TaskPanel.exe"
+      $sc.IconLocation = "C:\path\to\TaskPanel.exe,0"
+      $sc.Save()
+
+Pin to taskbar:
+
+  - Right-click the shortcut (or the exe itself) > "Pin to taskbar"
+
+  Windows deliberately blocks apps from pinning themselves to the
+  taskbar automatically (anti-adware measure), so this one click always
+  has to be done by hand - there's no way to script around it.
+
+
+6. Your data
+------------
+Tasks, lists, and the archive are stored at:
+
+    %AppData%\TaskPanel\data.json
+
+This file is NOT part of the repo and does not come with a fresh
+install or clone - a new device starts with a single empty list. To
+carry your tasks over from another device, close Master Tasks on both,
+then copy that one file to the same location on the new device.
+
+
+7. A few notes
+---------------
+- Single instance: launching the exe again while it's already running
+  just brings the existing window to the front instead of opening a
+  duplicate - safe to double-click the shortcut/pinned icon any time.
+- The app does not currently launch automatically at Windows startup -
+  it has to be opened manually (shortcut, taskbar pin, or Start menu)
+  each time you log in. This could be added later if wanted (a Startup
+  folder shortcut or a Task Scheduler entry).
+- Acrylic blur and rounded corners use Windows 10/11 APIs; on Windows
+  10 the corner-rounding is silently skipped rather than erroring.
