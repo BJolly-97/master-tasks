@@ -5,6 +5,17 @@ using System.Text.Json.Serialization;
 
 namespace TaskPanel.Models;
 
+/// <summary>
+/// How a task sorts and groups by its deadline. Ordered so the enum value doubles
+/// as the sort key — <see cref="Overdue"/> floats to the top, then <see cref="Urgent"/>.
+/// </summary>
+public enum TaskUrgency
+{
+    Overdue,
+    Urgent,
+    Normal,
+}
+
 public class TaskItem : INotifyPropertyChanged
 {
     private string _text = string.Empty;
@@ -43,6 +54,8 @@ public class TaskItem : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsUrgent));
             OnPropertyChanged(nameof(IsOverdue));
+            OnPropertyChanged(nameof(Urgency));
+            OnPropertyChanged(nameof(UrgencyBucket));
             OnPropertyChanged(nameof(DueDateLabel));
         }
     }
@@ -53,6 +66,32 @@ public class TaskItem : INotifyPropertyChanged
 
     [JsonIgnore]
     public bool IsOverdue => DueDate.HasValue && DueDate.Value.Date < DateTime.Today;
+
+    /// <summary>
+    /// Which deadline bucket this task groups under. A task only reaches here while
+    /// it's live in a list — archiving removes it — so a past due date always means
+    /// <see cref="TaskUrgency.Overdue"/>. Drives sorting: the enum's declared order
+    /// (Overdue, Urgent, Normal) is the order the groups stack in.
+    /// </summary>
+    [JsonIgnore]
+    public TaskUrgency Urgency =>
+        !DueDate.HasValue ? TaskUrgency.Normal
+        : DueDate.Value.Date < DateTime.Today ? TaskUrgency.Overdue
+        : DueDate.Value.Date <= DateTime.Today.AddDays(7) ? TaskUrgency.Urgent
+        : TaskUrgency.Normal;
+
+    /// <summary>
+    /// The group key the task list groups on. A plain string rather than the
+    /// <see cref="Urgency"/> enum so the header's DataTriggers can match it — WPF
+    /// can't reliably compare a group's <c>Name</c> (typed <c>object</c>) to an enum.
+    /// </summary>
+    [JsonIgnore]
+    public string UrgencyBucket => Urgency switch
+    {
+        TaskUrgency.Overdue => "Overdue",
+        TaskUrgency.Urgent => "Urgent",
+        _ => "General",
+    };
 
     [JsonIgnore]
     public string DueDateLabel => DueDate switch
@@ -88,6 +127,8 @@ public class TaskItem : INotifyPropertyChanged
     {
         OnPropertyChanged(nameof(IsUrgent));
         OnPropertyChanged(nameof(IsOverdue));
+        OnPropertyChanged(nameof(Urgency));
+        OnPropertyChanged(nameof(UrgencyBucket));
         OnPropertyChanged(nameof(DueDateLabel));
     }
 

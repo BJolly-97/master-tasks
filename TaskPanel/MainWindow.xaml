@@ -474,14 +474,16 @@
                                     <TextBlock FontSize="11" FontWeight="SemiBold" Margin="4,8,0,4">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
+                                                <Setter Property="Text" Value="General"/>
+                                                <Setter Property="Foreground" Value="#F9E07F"/>
                                                 <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Name}" Value="True">
+                                                    <DataTrigger Binding="{Binding Name}" Value="Overdue">
+                                                        <Setter Property="Text" Value="&#x26A0; Overdue — past its due date"/>
+                                                        <Setter Property="Foreground" Value="#E5484D"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Name}" Value="Urgent">
                                                         <Setter Property="Text" Value="&#x26A0; Urgent — due within a week"/>
                                                         <Setter Property="Foreground" Value="#D46C4E"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Name}" Value="False">
-                                                        <Setter Property="Text" Value="General"/>
-                                                        <Setter Property="Foreground" Value="#F9E07F"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>

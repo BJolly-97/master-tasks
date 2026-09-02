@@ -302,21 +302,22 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Each tab's task ListBox is a fresh instance every time you switch to it, so
-    /// this configures live grouping/sorting on it each time: urgent tasks (due
-    /// within a week) sort to the top and get bumped under their own heading, and
-    /// both re-evaluate live as IsUrgent changes (edits, or the periodic timer).
+    /// this configures live grouping/sorting on it each time: tasks sort and group
+    /// by deadline bucket — Overdue, then Urgent (due within a week), then the rest —
+    /// and both re-evaluate live as Urgency changes (edits, or the periodic timer).
+    /// The enum's declaration order is its sort order, so ascending is what we want.
     /// </summary>
     private void TaskListBox_Loaded(object sender, RoutedEventArgs e)
     {
         if (sender is not ListBox listBox) return;
 
         var view = listBox.Items;
-        view.SortDescriptions.Add(new SortDescription(nameof(TaskItem.IsUrgent), ListSortDirection.Descending));
-        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(TaskItem.IsUrgent)));
+        view.SortDescriptions.Add(new SortDescription(nameof(TaskItem.Urgency), ListSortDirection.Ascending));
+        view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(TaskItem.UrgencyBucket)));
         view.IsLiveSorting = true;
         view.IsLiveGrouping = true;
-        view.LiveSortingProperties.Add(nameof(TaskItem.IsUrgent));
-        view.LiveGroupingProperties.Add(nameof(TaskItem.IsUrgent));
+        view.LiveSortingProperties.Add(nameof(TaskItem.Urgency));
+        view.LiveGroupingProperties.Add(nameof(TaskItem.UrgencyBucket));
     }
 
     private void DueDate_Click(object sender, RoutedEventArgs e)
